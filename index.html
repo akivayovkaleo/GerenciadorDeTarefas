@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mercearia Plus</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <h2>Mercearia</h2>
+      <nav>
+        <button id="btn-medias" class="active">Médias</button>
+        <button id="btn-despesas">Despesas</button>
+      </nav>
+    </aside>
+
+    <!-- Conteúdo -->
+    <main class="content">
+      <!-- Tela de Médias -->
+      <section id="tela-medias" class="tela ativa">
+        <h2>Registrar Faturamento do Dia</h2>
+        <div class="form-group">
+          <label for="valor-dia">Valor (R$):</label>
+          <input type="number" id="valor-dia" step="0.01" placeholder="Ex: 1250.50" />
+          <button id="btn-registrar">Registrar Hoje</button>
+        </div>
+
+        <div class="media-selecao">
+          <h3>Ver Média de:</h3>
+          <button id="btn-dia">Dia</button>
+          <button id="btn-semana">Semana</button>
+          <button id="btn-mes">Mês</button>
+        </div>
+
+        <div id="resultado-media" class="resultado"></div>
+      </section>
+
+      <!-- Tela de Despesas -->
+      <section id="tela-despesas" class="tela">
+        <h2>Despesas e Receitas</h2>
+        <div class="form-group">
+          <label>Tipo:</label>
+          <label><input type="radio" name="tipo" value="receita" checked /> Receita</label>
+          <label><input type="radio" name="tipo" value="despesa" /> Despesa</label>
+
+          <label for="valor-lanc">Valor (R$):</label>
+          <input type="number" id="valor-lanc" step="0.01" placeholder="Ex: 80.00" />
+
+          <label for="descricao">Descrição:</label>
+          <input type="text" id="descricao" placeholder="Ex: Compra de arroz" />
+
+          <label for="data-lanc">Data:</label>
+          <input type="date" id="data-lanc" />
+
+          <button id="btn-adicionar-lanc">Adicionar</button>
+        </div>
+
+        <div id="lista-lancamentos" class="lista-lancamentos"></div>
+        <div id="totais" class="totais"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

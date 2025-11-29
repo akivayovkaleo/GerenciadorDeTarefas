@@ -1,0 +1,178 @@
+:root {
+  --azul-mercearia: #1E3A8A;
+  --amarelo-mercearia: #D4A017;
+  --amarelo-claro: #FDE68A;
+  --cinza-fundo: #F9FAFB;
+  --branco: #FFFFFF;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  background-color: var(--cinza-fundo);
+  color: #333;
+}
+
+.app {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 220px;
+  background-color: var(--azul-mercearia);
+  color: var(--branco);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.sidebar h2 {
+  font-size: 1.4rem;
+}
+
+.sidebar button {
+  width: 100%;
+  padding: 12px;
+  background: none;
+  border: none;
+  color: white;
+  text-align: left;
+  font-size: 1.1rem;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.sidebar button.active,
+.sidebar button:hover {
+  background-color: var(--amarelo-mercearia);
+}
+
+.content {
+  flex: 1;
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.tela {
+  display: none;
+}
+
+.tela.ativa {
+  display: block;
+}
+
+h2 {
+  color: var(--azul-mercearia);
+  margin-bottom: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 500px;
+}
+
+.form-group label {
+  font-weight: bold;
+  color: #222;
+}
+
+.form-group input[type="number"],
+.form-group input[type="text"],
+.form-group input[type="date"] {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.form-group input[type="radio"] {
+  margin-right: 6px;
+}
+
+button {
+  padding: 10px 20px;
+  background-color: var(--amarelo-mercearia);
+  color: var(--branco);
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+.media-selecao {
+  margin-top: 20px;
+}
+
+.media-selecao button {
+  margin-right: 10px;
+  background-color: #ddd;
+  color: #333;
+}
+
+.media-selecao button:hover {
+  background-color: #bbb;
+}
+
+.resultado {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: var(--amarelo-claro);
+  border-radius: 6px;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.lista-lancamentos {
+  margin-top: 20px;
+  max-width: 600px;
+}
+
+.lista-lancamentos div {
+  padding: 10px;
+  margin-bottom: 8px;
+  background: white;
+  border-radius: 6px;
+  border-left: 4px solid var(--amarelo-mercearia);
+}
+
+.lista-lancamentos .despesa {
+  border-left-color: #e53e3e;
+}
+
+.totais {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: white;
+  border-radius: 6px;
+  font-weight: bold;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+  .app {
+    flex-direction: column;
+  }
+  .sidebar {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+  }
+}
