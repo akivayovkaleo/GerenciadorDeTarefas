@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, serverTimestamp, query, orderBy } from 'firebase/firestore';
+import { collection, addDoc, getDocs, serverTimestamp, query, orderBy, Timestamp } from 'firebase/firestore';
 
 // Tipo para representar uma transação
 type Transaction = {
@@ -17,13 +17,14 @@ type Transaction = {
 export default function DespesasPage() {
   // Estado para o formulário
   const [description, setDescription] = useState('');
-  const [amount, setAmount] = useState<number | ''>('');
-  const [type, setType] = useState<'receita' | 'despesa'>('despesa');
-  const [category, setCategory] = useState('Outros');
+  const [amount, setAmount]       = useState<number | ''>('');
+  const [type, setType]           = useState<'receita' | 'despesa'>('despesa');
+  const [category, setCategory]   = useState('Outros');
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [adding, setAdding] = useState(false);
+  const [loading, setLoading]     = useState(true);
+  const [error, setError]         = useState<string | null>(null);
+  const [adding, setAdding]       = useState(false);
 
   // Função para buscar as transações do Firestore
   const fetchTransactions = async () => {
@@ -62,12 +63,13 @@ export default function DespesasPage() {
         amount: Number(amount),
         type,
         category,
-        date: serverTimestamp(),
+        date: date ? Timestamp.fromDate(new Date(date)) : serverTimestamp(),
       });
 
       setDescription('');
       setAmount('');
       setCategory('Outros');
+      setDate(new Date().toISOString().split('T')[0]);
       await fetchTransactions();
     } catch (error) {
       setError('Ocorreu um erro ao salvar a transação. Tente novamente.');
@@ -114,7 +116,7 @@ export default function DespesasPage() {
       {/* Formulário para Adicionar Transação */}
       <div className="bg-white p-6 rounded-lg shadow-lg mb-8 transition-shadow hover:shadow-xl">
         <h2 className="text-xl font-semibold mb-4">Adicionar Nova Transação</h2>
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-6 gap-4 items-center">
           <input
             type="text"
             value={description}
@@ -149,9 +151,15 @@ export default function DespesasPage() {
             <option>Limpeza</option>
             <option>Outros</option>
           </select>
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-azul-mercearia"
+          />
           <button
             type="submit"
-            className="col-span-1 md:col-start-5 bg-azul-mercearia text-white px-6 py-2 rounded-md hover:bg-opacity-90 transition-colors disabled:opacity-50"
+            className="col-span-1 md:col-start-6 bg-azul-mercearia text-white px-6 py-2 rounded-md hover:bg-opacity-90 transition-colors disabled:opacity-50"
             disabled={adding}
           >
             {adding ? 'Adicionando...' : 'Adicionar'}

@@ -17,9 +17,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} flex bg-gray-50`}>
+      <body className={`${inter.className} flex bg-gray-100`}>
         <Sidebar />
-        <main className="flex-grow p-8">{children}</main>
+        <main className="flex-grow">
+          <div className="p-8">{children}</div>
+        </main>
       </body>
     </html>
   );
