@@ -152,7 +152,7 @@ export default function DespesasPendentesPage() {
               <tbody>
                 {filtered.map((f) => (
                   <tr key={f.id} className="border-b">
-                    <td className="py-2">{f.dueDate}</td>
+                    <td className="py-2">{formatISOToBR(f.dueDate)}</td>
                     <td className="py-2">{f.description}</td>
                     <td className="py-2">{f.category}</td>
                     <td className="py-2 text-right">R$ {f.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
@@ -165,4 +165,15 @@ export default function DespesasPendentesPage() {
       </div>
     </div>
   );
+}
+
+function formatISOToBR(dateStr?: string) {
+  if (!dateStr) return '-';
+  const m = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+  try {
+    return new Date(dateStr).toLocaleDateString('pt-BR');
+  } catch {
+    return dateStr;
+  }
 }
