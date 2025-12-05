@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState, Suspense } from 'react';
 import { Expense } from '@/lib/calculations';
-import { parseISO, getISOWeek, format, isWithinInterval, startOfWeek, endOfWeek } from 'date-fns';
+import { parseISO, getISOWeek, format, isWithinInterval, startOfWeek, endOfWeek, getDay } from 'date-fns';
 const ChartsClient = React.lazy(() => import('@/components/ChartsClient'));
 
 function toISO(date: Date) {
@@ -16,6 +16,7 @@ export default function DespesasPendentesPage() {
   const [selectedIds, setSelectedIds] = useState<Record<string, boolean>>({});
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [searchText, setSearchText] = useState<string>('');
+  const [paymentDayFilter, setPaymentDayFilter] = useState<string>('all');
 
   useEffect(() => {
     try {
@@ -35,26 +36,33 @@ export default function DespesasPendentesPage() {
   }, [expenses]);
 
   const filtered = useMemo(() => {
+    let baseFiltered = pending;
+
+    if (paymentDayFilter !== 'all') {
+      const dayIndex = parseInt(paymentDayFilter, 10);
+      baseFiltered = baseFiltered.filter(e => e.dueDate && getDay(parseISO(e.dueDate)) === dayIndex);
+    }
+
     if (!selectedDate) return [] as Expense[];
     if (period === 'day') {
-      return pending.filter(e => e.dueDate === selectedDate && (categoryFilter === 'all' || e.category === categoryFilter) && e.description.toLowerCase().includes(searchText.toLowerCase()));
+      return baseFiltered.filter(e => e.dueDate === selectedDate && (categoryFilter === 'all' || e.category === categoryFilter) && e.description.toLowerCase().includes(searchText.toLowerCase()));
     }
 
     if (period === 'month') {
       const prefix = selectedDate.slice(0, 7); // YYYY-MM
-      return pending.filter(e => e.dueDate && e.dueDate.startsWith(prefix) && (categoryFilter === 'all' || e.category === categoryFilter) && e.description.toLowerCase().includes(searchText.toLowerCase()));
+      return baseFiltered.filter(e => e.dueDate && e.dueDate.startsWith(prefix) && (categoryFilter === 'all' || e.category === categoryFilter) && e.description.toLowerCase().includes(searchText.toLowerCase()));
     }
 
     // week
     const ref = parseISO(selectedDate);
     const start = startOfWeek(ref, { weekStartsOn: 1 });
     const end = endOfWeek(ref, { weekStartsOn: 1 });
-    return pending.filter(e => {
+    return baseFiltered.filter(e => {
       if (!e.dueDate) return false;
       const d = parseISO(e.dueDate);
       return isWithinInterval(d, { start, end }) && (categoryFilter === 'all' || e.category === categoryFilter) && e.description.toLowerCase().includes(searchText.toLowerCase());
     });
-  }, [pending, period, selectedDate, categoryFilter, searchText]);
+  }, [pending, period, selectedDate, categoryFilter, searchText, paymentDayFilter]);
 
   const total = useMemo(() => filtered.reduce((s, x) => s + x.amount, 0), [filtered]);
 
@@ -65,7 +73,6 @@ export default function DespesasPendentesPage() {
 
   const chartData = useMemo(() => {
     if (period === 'day') {
-      // show list by category or individual items
       const labels = filtered.map(f => f.description || f.id);
       const data = filtered.map(f => f.amount);
       return { labels, datasets: [{ label: 'A pagar (R$)', data, backgroundColor: '#f59e0b' }] };
@@ -84,30 +91,17 @@ export default function DespesasPendentesPage() {
       return { labels, datasets: [{ label: 'A pagar (R$)', data, backgroundColor }] };
     }
 
-    // week: group by weekday name
-    const names = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+    const names = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
     const groups: number[] = Array(7).fill(0);
-    const ref = parseISO(selectedDate);
-    const start = startOfWeek(ref, { weekStartsOn: 1 });
     filtered.forEach(f => {
       if (!f.dueDate) return;
       const d = parseISO(f.dueDate);
-      const idx = (d.getDay() + 6) % 7; // make Monday=0
+      const idx = getDay(d);
       groups[idx] += f.amount;
     });
 
-    // Highlight today's day in the week
-    const todayDayOfWeek = (new Date().getDay() + 6) % 7;
-    const backgroundColor = groups.map((_, idx) => {
-      // Check if this is the current week and same day
-      const weekStart = startOfWeek(parseISO(today), { weekStartsOn: 1 });
-      const selectedWeekStart = start;
-      if (weekStart.toISOString().slice(0, 10) === selectedWeekStart.toISOString().slice(0, 10) && idx === todayDayOfWeek) {
-        return '#ef4444';
-      }
-      return '#f59e0b';
-    });
-
+    const todayDayOfWeek = getDay(new Date());
+    const backgroundColor = groups.map((_, idx) => (idx === todayDayOfWeek ? '#ef4444' : '#f59e0b'));
     return { labels: names, datasets: [{ label: 'A pagar (R$)', data: groups, backgroundColor }] };
   }, [filtered, period, selectedDate, today]);
 
@@ -180,7 +174,7 @@ export default function DespesasPendentesPage() {
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
           <label className="text-sm text-gray-700">Período:</label>
-          <select value={period} onChange={(e) => setPeriod(e.target.value as any)} className="px-3 py-1 border rounded">
+          <select value={period} onChange={(e) => setPeriod(e.target.value as any)} className="input">
             <option value="day">Dia</option>
             <option value="week">Semana</option>
             <option value="month">Mês</option>
@@ -188,24 +182,38 @@ export default function DespesasPendentesPage() {
         </div>
 
         <div>
-          <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="px-3 py-1 border rounded" />
+          <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="input" />
         </div>
 
         <div className="flex items-center gap-2">
           <label className="text-sm text-gray-700">Categoria:</label>
-          <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="px-3 py-1 border rounded">
+          <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="input">
             <option value="all">Todas</option>
             {categories.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
 
         <div className="flex items-center gap-2">
-          <input placeholder="Buscar descrição" value={searchText} onChange={(e) => setSearchText(e.target.value)} className="px-3 py-1 border rounded" />
+          <label className="text-sm text-gray-700">Dia de Pagamento:</label>
+          <select value={paymentDayFilter} onChange={(e) => setPaymentDayFilter(e.target.value)} className="input">
+            <option value="all">Todos</option>
+            <option value="0">Domingo</option>
+            <option value="1">Segunda</option>
+            <option value="2">Terça</option>
+            <option value="3">Quarta</option>
+            <option value="4">Quinta</option>
+            <option value="5">Sexta</option>
+            <option value="6">Sábado</option>
+          </select>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <input placeholder="Buscar descrição" value={searchText} onChange={(e) => setSearchText(e.target.value)} className="input" />
         </div>
 
         <div className="ml-auto flex items-center gap-2">
-          <button onClick={exportCsv} className="px-3 py-1 bg-yellow-600 text-white rounded">Exportar CSV</button>
-          <button onClick={exportAggregatedByMonth} className="px-3 py-1 bg-yellow-500 text-white rounded">Exportar Agregado</button>
+          <button onClick={exportCsv} className="btn-primary">Exportar CSV</button>
+          <button onClick={exportAggregatedByMonth} className="btn-secondary">Exportar Agregado</button>
         </div>
       </div>
 
@@ -226,10 +234,10 @@ export default function DespesasPendentesPage() {
         <h2 className="text-lg font-semibold mb-3">Itens pendentes</h2>
         <div className="flex items-center gap-2 mb-3">
           <label className="text-sm">Seleção:</label>
-          <button onClick={() => selectAllVisible(true)} className="px-2 py-1 bg-blue-50 rounded border">Selecionar todos visíveis</button>
-          <button onClick={() => selectAllVisible(false)} className="px-2 py-1 bg-blue-50 rounded border">Limpar seleção</button>
-          <button onClick={markSelectedAsPaid} className="px-2 py-1 bg-green-600 text-white rounded">Marcar selecionados como pagos</button>
-          <button onClick={markAllVisibleAsPaid} className="px-2 py-1 bg-green-500 text-white rounded">Marcar todos visíveis como pagos</button>
+          <button onClick={() => selectAllVisible(true)} className="btn-secondary">Selecionar todos visíveis</button>
+          <button onClick={() => selectAllVisible(false)} className="btn-secondary">Limpar seleção</button>
+          <button onClick={markSelectedAsPaid} className="btn-primary">Marcar selecionados como pagos</button>
+          <button onClick={markAllVisibleAsPaid} className="btn-primary">Marcar todos visíveis como pagos</button>
         </div>
         {filtered.length === 0 ? (
           <p className="text-gray-500">Nenhum item pendente neste período.</p>
@@ -247,7 +255,7 @@ export default function DespesasPendentesPage() {
               </thead>
               <tbody>
                 {filtered.map((f) => (
-                  <tr key={f.id} className="border-b">
+                  <tr key={f.id} className={`border-b ${f.installments && f.installments > 1 ? 'bg-yellow-50' : ''}`}>
                     <td className="py-2"><input type="checkbox" checked={!!selectedIds[f.id]} onChange={() => toggleSelect(f.id)} /></td>
                     <td className="py-2">{formatISOToBR(f.dueDate)}</td>
                     <td className="py-2">{f.description}</td>

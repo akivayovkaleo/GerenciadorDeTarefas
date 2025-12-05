@@ -1,16 +1,23 @@
 'use client';
 
 import { Expense } from '@/lib/calculations';
-import { FiTrash2 } from 'react-icons/fi';
+import { FiEdit, FiTrash2 } from 'react-icons/fi';
 
 interface ExpenseListProps {
   expenses: Expense[];
   onDeleteExpense: (id: string) => void;
+  onEditExpense: (expense: Expense) => void;
   onTogglePaid?: (id: string) => void;
   hidePaymentStatus?: boolean;
 }
 
-export default function ExpenseList({ expenses, onDeleteExpense, onTogglePaid, hidePaymentStatus }: ExpenseListProps) {
+export default function ExpenseList({
+  expenses,
+  onDeleteExpense,
+  onEditExpense,
+  onTogglePaid,
+  hidePaymentStatus,
+}: ExpenseListProps) {
   const sortedExpenses = [...expenses].sort((a, b) => {
     return parseDate(a.date).getTime() < parseDate(b.date).getTime() ? 1 : -1;
   });
@@ -113,6 +120,12 @@ export default function ExpenseList({ expenses, onDeleteExpense, onTogglePaid, h
                 </td>
 
                 <td className="px-6 py-4 text-center flex items-center justify-center gap-3">
+                  <button
+                    onClick={() => onEditExpense(expense)}
+                    className="text-blue-600 hover:text-blue-800 transition"
+                  >
+                    <FiEdit size={18} />
+                  </button>
                   {expense.type === 'despesa' && onTogglePaid && (
                     <button
                       onClick={() => onTogglePaid(expense.id)}
@@ -131,7 +144,6 @@ export default function ExpenseList({ expenses, onDeleteExpense, onTogglePaid, h
                     <FiTrash2 size={18} />
                   </button>
                 </td>
-
               </tr>
             ))}
           </tbody>
