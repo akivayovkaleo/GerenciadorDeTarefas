@@ -81,18 +81,35 @@ export default function GraficosPage() {
   const receitaData = months.map((m) => Number(byMonth[m].receita.toFixed(2)));
   const despesaData = months.map((m) => Number(byMonth[m].despesa.toFixed(2)));
 
+  const azulMercearia = '#0a7df5';
+  const amareloQueimado = '#f5b50a';
+
+  // Helper to generate shades for pie charts
+  function generateShades(baseColor: string, count: number): string[] {
+    const shades: Record<string, string[]> = {
+      '#0a7df5': ['#0a7df5', '#2a92f6', '#4aa7f7', '#6bbcf8', '#8ccff9', '#adddfa'],
+      '#f5b50a': ['#f5b50a', '#f6be2a', '#f7c74a', '#f8d06a', '#f9d98a', '#fae2aa'],
+    };
+    const selectedShades = shades[baseColor] || ['#cccccc'];
+    const result: string[] = [];
+    for (let i = 0; i < count; i++) {
+      result.push(selectedShades[i % selectedShades.length]);
+    }
+    return result;
+  }
+
   const data = {
     labels,
     datasets: [
       {
         label: 'Receitas',
         data: receitaData,
-        backgroundColor: '#0f172a',
+        backgroundColor: azulMercearia,
       },
       {
         label: 'Despesas',
         data: despesaData,
-        backgroundColor: '#b7791f',
+        backgroundColor: amareloQueimado,
       },
     ],
   };
@@ -103,10 +120,31 @@ export default function GraficosPage() {
     interaction: { mode: 'index', intersect: false },
     plugins: {
       legend: { position: 'top' },
-      title: { display: false },
+      title: { display: true, text: 'Receitas vs. Despesas Mensais', font: { size: 16 } },
+      tooltip: {
+        callbacks: {
+          label: (context: any) => {
+            let label = context.dataset.label || '';
+            if (label) {
+              label += ': ';
+            }
+            if (context.parsed.y !== null) {
+              label += new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(context.parsed.y);
+            }
+            return label;
+          }
+        }
+      }
     },
     scales: {
-      y: { beginAtZero: true, ticks: { callback: (v: any) => Number(v).toLocaleString('pt-BR') } },
+      y: {
+        beginAtZero: true,
+        ticks: { callback: (v: any) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v) },
+        grid: { color: 'rgba(0, 0, 0, 0.05)' },
+      },
+      x: {
+        grid: { display: false },
+      }
     },
   };
 
@@ -118,15 +156,34 @@ export default function GraficosPage() {
     labels: ['Receitas', 'Despesas'],
     datasets: [{
       data: [totalReceita, totalDespesa],
-      backgroundColor: ['#0f172a', '#b7791f'],
+      backgroundColor: [azulMercearia, amareloQueimado],
     }],
   };
 
-  const pieOptionsBasic: any = {
+  const createPieOptions = (title: string) => ({
     responsive: true,
     maintainAspectRatio: false,
-    plugins: { legend: { position: 'top' } },
-  };
+    plugins: {
+      legend: { position: 'top' },
+      title: { display: true, text: title, font: { size: 16 } },
+      tooltip: {
+        callbacks: {
+          label: (context: any) => {
+            const label = context.label || '';
+            const value = context.raw || 0;
+            const total = context.chart.getDatasetMeta(0).total || 1;
+            const percentage = ((value / total) * 100).toFixed(2);
+            const formattedValue = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+            return `${label}: ${formattedValue} (${percentage}%)`;
+          }
+        }
+      }
+    },
+  });
+
+  const pieOptionsReceiptVsExpense = createPieOptions('Receitas vs. Despesas (Total)');
+  const pieOptionsDespesa = createPieOptions('Distribuição de Despesas por Categoria');
+  const pieOptionsReceita = createPieOptions('Distribuição de Receitas por Categoria');
 
   // Pie chart: only Despesas by category
   const despesasByCategory: Record<string, number> = {};
@@ -140,7 +197,7 @@ export default function GraficosPage() {
     labels: pieLabelsDespesa,
     datasets: [{
       data: pieLabelsDespesa.map(l => despesasByCategory[l]),
-      backgroundColor: ['#b7791f', '#d97706', '#f59e0b', '#fbbf24', '#fcd34d', '#fef3c7'],
+      backgroundColor: generateShades(amareloQueimado, pieLabelsDespesa.length),
     }],
   };
 
@@ -156,7 +213,7 @@ export default function GraficosPage() {
     labels: pieLabelsReceita,
     datasets: [{
       data: pieLabelsReceita.map(l => receitasByCategory[l]),
-      backgroundColor: ['#0f172a', '#1e293b', '#334155', '#475569', '#64748b', '#78716c'],
+      backgroundColor: generateShades(azulMercearia, pieLabelsReceita.length),
     }],
   };
 
@@ -259,23 +316,20 @@ export default function GraficosPage() {
 
       <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white p-4 rounded shadow" style={{ height: 300 }}>
-          <h3 className="font-semibold text-blue-900 mb-2">Receitas vs Despesas</h3>
           <Suspense fallback={<div>Carregando...</div>}>
-            <ChartsClient options={pieOptionsBasic} data={pieDataReceiptVsExpense} type="pie" />
+            <ChartsClient options={pieOptionsReceiptVsExpense} data={pieDataReceiptVsExpense} type="pie" />
           </Suspense>
         </div>
 
         <div className="bg-white p-4 rounded shadow" style={{ height: 300 }}>
-          <h3 className="font-semibold text-blue-900 mb-2">Despesas por Categoria</h3>
           <Suspense fallback={<div>Carregando...</div>}>
-            <ChartsClient options={pieOptionsBasic} data={pieDataDespesa} type="pie" />
+            <ChartsClient options={pieOptionsDespesa} data={pieDataDespesa} type="pie" />
           </Suspense>
         </div>
 
         <div className="bg-white p-4 rounded shadow" style={{ height: 300 }}>
-          <h3 className="font-semibold text-blue-900 mb-2">Receitas por Categoria</h3>
           <Suspense fallback={<div>Carregando...</div>}>
-            <ChartsClient options={pieOptionsBasic} data={pieDataReceita} type="pie" />
+            <ChartsClient options={pieOptionsReceita} data={pieDataReceita} type="pie" />
           </Suspense>
         </div>
       </div>
