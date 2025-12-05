@@ -123,6 +123,7 @@ export default function AverageAnalysis({ expenses }: AverageAnalysisProps) {
                   R$ {dailyTarget.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
               </div>
+
             </div>
           )}
           {activeTab === 'weekly' && (
